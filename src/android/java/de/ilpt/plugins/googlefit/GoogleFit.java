@@ -263,8 +263,7 @@ public class GoogleFit extends CordovaPlugin {
 		Date now = new Date();
 		cal.setTime(now);
 		long endTime = cal.getTimeInMillis();
-		cal.add(Calendar.WEEK_OF_YEAR, -1);
-		long startTime = cal.getTimeInMillis();
+		long startTime = 1;
 
 		SimpleDateFormat dateFormat = new SimpleDateFormat();
 		Log.i(TAG, "Range Start: " + dateFormat.format(startTime));

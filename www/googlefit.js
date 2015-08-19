@@ -15,6 +15,10 @@ GoogleFit.prototype.connect = function(successCallback, failureCallback) {
 	exec(successCallback, failureCallback, 'GoogleFit', 'connect', []);
 };
 
+GoogleFit.prototype.isConnected = function(successCallback, failureCallback) {
+	exec(successCallback, failureCallback, 'GoogleFit', 'isConnected', []);
+};
+
 GoogleFit.prototype.query = function(successCallback, failureCallback) {
 	exec(successCallback, failureCallback, 'GoogleFit', 'query', []);
 };
@@ -81,6 +85,10 @@ GoogleFit.prototype.saveHeight = function(options, successCallback, failureCallb
 	}
 
 	exec(successCallback, failureCallback, 'GoogleFit', 'saveHeight', [options]);
+};
+
+GoogleFit.prototype.getStepsLastWeek = function(options, successCallback, failureCallback) {
+	exec(successCallback, failureCallback, 'GoogleFit', 'getStepsLastWeek', [options]);
 };
 
 //

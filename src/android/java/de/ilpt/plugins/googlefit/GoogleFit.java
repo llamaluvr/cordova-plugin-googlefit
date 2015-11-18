@@ -7,26 +7,16 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.os.Bundle;
 import android.util.Log;
-
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.Scopes;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Scope;
-import com.google.android.gms.common.api.Status;
+import com.google.android.gms.common.api.*;
 import com.google.android.gms.fitness.Fitness;
-import com.google.android.gms.fitness.data.Bucket;
-import com.google.android.gms.fitness.data.DataPoint;
-import com.google.android.gms.fitness.data.DataSet;
-import com.google.android.gms.fitness.data.DataType;
-import com.google.android.gms.fitness.data.Field;
+import com.google.android.gms.fitness.data.*;
 import com.google.android.gms.fitness.request.DataReadRequest;
 import com.google.android.gms.fitness.request.OnDataPointListener;
 import com.google.android.gms.fitness.request.SensorRequest;
 import com.google.android.gms.fitness.result.DataReadResult;
-
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
@@ -47,7 +37,9 @@ public class GoogleFit extends CordovaPlugin {
 
   private GoogleApiClient googleApiClient;
 
-  public boolean execute(String action, JSONArray args, CallbackContext callback) {
+  public boolean execute(String action, JSONArray args,final CallbackContext callback)
+          throws JSONException
+  {
     Log.i(TAG, "Will execute ffff action \"" + action + "\" with arguments " + args);
 
 
@@ -114,7 +106,13 @@ public class GoogleFit extends CordovaPlugin {
         return true;
 
       case "getStepsLastWeek":
-        getStepsLastWeek(callback);
+
+        cordova.getThreadPool().execute(new Runnable() {
+          public void run() {
+            getStepsLastWeek(callback);
+          }
+        });
+
         return true;
       default:
         Log.w(TAG, "Could not execute unknown action \"" + action + "\"!");
@@ -142,11 +140,11 @@ public class GoogleFit extends CordovaPlugin {
 
     if (googleApiClient == null) {
       googleApiClient = new GoogleApiClient.Builder(getActivity())
-        .useDefaultAccount()
-        .addApi(Fitness.HISTORY_API)
-        .addScope(new Scope(Scopes.FITNESS_BODY_READ_WRITE))
-        .addScope(new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE))
-        .build();
+              .useDefaultAccount()
+              .addApi(Fitness.HISTORY_API)
+              .addScope(new Scope(Scopes.FITNESS_BODY_READ_WRITE))
+              .addScope(new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE))
+              .build();
     }
 
     googleApiClient.registerConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
@@ -197,11 +195,11 @@ public class GoogleFit extends CordovaPlugin {
 
     if (googleApiClient == null) {
       googleApiClient = new GoogleApiClient.Builder(getActivity())
-        .useDefaultAccount()
-        .addApi(Fitness.HISTORY_API)
-        .addScope(new Scope(Scopes.FITNESS_BODY_READ_WRITE))
-        .addScope(new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE))
-        .build();
+              .useDefaultAccount()
+              .addApi(Fitness.HISTORY_API)
+              .addScope(new Scope(Scopes.FITNESS_BODY_READ_WRITE))
+              .addScope(new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE))
+              .build();
     }
 
     googleApiClient.registerConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
@@ -269,18 +267,18 @@ public class GoogleFit extends CordovaPlugin {
     Log.i(TAG, "Range End: " + dateFormat.format(endTime));
 
     DataReadRequest readRequest = new DataReadRequest.Builder()
-      // The data request can specify multiple data types to return, effectively
-      // combining multiple data queries into one call.
-      // In this example, it's very unlikely that the request is for several hundred
-      // datapoints each consisting of a few steps and a timestamp.  The more likely
-      // scenario is wanting to see how many steps were walked per day, for 7 days.
-      .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
-        // Analogous to a "Group By" in SQL, defines how data should be aggregated.
-        // bucketByTime allows for a time span, whereas bucketBySession would allow
-        // bucketing by "sessions", which would need to be defined in code.
-      .bucketByTime(1, TimeUnit.DAYS)
-      .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
-      .build();
+            // The data request can specify multiple data types to return, effectively
+            // combining multiple data queries into one call.
+            // In this example, it's very unlikely that the request is for several hundred
+            // datapoints each consisting of a few steps and a timestamp.  The more likely
+            // scenario is wanting to see how many steps were walked per day, for 7 days.
+            .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
+                    // Analogous to a "Group By" in SQL, defines how data should be aggregated.
+                    // bucketByTime allows for a time span, whereas bucketBySession would allow
+                    // bucketing by "sessions", which would need to be defined in code.
+            .bucketByTime(1, TimeUnit.DAYS)
+            .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+            .build();
 
     Log.i(TAG, "Read data: " + readRequest);
 
@@ -346,10 +344,10 @@ public class GoogleFit extends CordovaPlugin {
 
 
     DataReadRequest request = new DataReadRequest.Builder()
-      .read(DataType.TYPE_WEIGHT)
-      .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
-      .setLimit(1)
-      .build();
+            .read(DataType.TYPE_WEIGHT)
+            .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+            .setLimit(1)
+            .build();
     PendingResult<DataReadResult> pendingResult = Fitness.HistoryApi.readData(googleApiClient, request);
 
     handleLatestDataReadResult(pendingResult, DataType.TYPE_WEIGHT, Field.FIELD_WEIGHT, callback);
@@ -368,10 +366,10 @@ public class GoogleFit extends CordovaPlugin {
     Log.i(TAG, "Range End: " + dateFormat.format(endTime));
 
     DataReadRequest request = new DataReadRequest.Builder()
-      .read(DataType.TYPE_HEIGHT)
-      .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS) // all time
-      .setLimit(1) // latest result only
-      .build();
+            .read(DataType.TYPE_HEIGHT)
+            .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS) // all time
+            .setLimit(1) // latest result only
+            .build();
     PendingResult<DataReadResult> pendingResult = Fitness.HistoryApi.readData(googleApiClient, request);
 
     handleLatestDataReadResult(pendingResult, DataType.TYPE_HEIGHT, Field.FIELD_HEIGHT, callback);
@@ -387,7 +385,7 @@ public class GoogleFit extends CordovaPlugin {
     // Invoke the History API to fetch the data with the query and await the result of
     // the read request.
     DataReadResult dataReadResult =
-      Fitness.HistoryApi.readData(googleApiClient, readRequest).await(1, TimeUnit.MINUTES);
+            Fitness.HistoryApi.readData(googleApiClient, readRequest).await(1, TimeUnit.MINUTES);
     // [END read_dataset]
 
     // For the sake of the sample, we'll print the data so we can see what we just added.
@@ -422,18 +420,18 @@ public class GoogleFit extends CordovaPlugin {
     Log.i(TAG, "Range End: " + dateFormat.format(endTime));
 
     DataReadRequest readRequest = new DataReadRequest.Builder()
-      // The data request can specify multiple data types to return, effectively
-      // combining multiple data queries into one call.
-      // In this example, it's very unlikely that the request is for several hundred
-      // datapoints each consisting of a few steps and a timestamp.  The more likely
-      // scenario is wanting to see how many steps were walked per day, for 7 days.
-      .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
-        // Analogous to a "Group By" in SQL, defines how data should be aggregated.
-        // bucketByTime allows for a time span, whereas bucketBySession would allow
-        // bucketing by "sessions", which would need to be defined in code.
-      .bucketByTime(1, TimeUnit.DAYS)
-      .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
-      .build();
+            // The data request can specify multiple data types to return, effectively
+            // combining multiple data queries into one call.
+            // In this example, it's very unlikely that the request is for several hundred
+            // datapoints each consisting of a few steps and a timestamp.  The more likely
+            // scenario is wanting to see how many steps were walked per day, for 7 days.
+            .aggregate(DataType.TYPE_STEP_COUNT_DELTA, DataType.AGGREGATE_STEP_COUNT_DELTA)
+                    // Analogous to a "Group By" in SQL, defines how data should be aggregated.
+                    // bucketByTime allows for a time span, whereas bucketBySession would allow
+                    // bucketing by "sessions", which would need to be defined in code.
+            .bucketByTime(1, TimeUnit.DAYS)
+            .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+            .build();
     // [END build_read_data_request]
 
     return readRequest;
@@ -453,7 +451,7 @@ public class GoogleFit extends CordovaPlugin {
     // as buckets containing DataSets, instead of just DataSets.
     if (dataReadResult.getBuckets().size() > 0) {
       Log.i(TAG, "Number of returned buckets of DataSets is: "
-        + dataReadResult.getBuckets().size());
+              + dataReadResult.getBuckets().size());
 
       JSONArray jsonArray = new JSONArray();
 
@@ -472,7 +470,7 @@ public class GoogleFit extends CordovaPlugin {
 
     } else if (dataReadResult.getDataSets().size() > 0) {
       Log.i(TAG, "Number of returned DataSets is: "
-        + dataReadResult.getDataSets().size());
+              + dataReadResult.getDataSets().size());
       for (DataSet dataSet : dataReadResult.getDataSets()) {
         dumpDataSet(dataSet);
       }
@@ -502,7 +500,7 @@ public class GoogleFit extends CordovaPlugin {
 
         for (Field field : dp.getDataType().getFields()) {
           Log.i(TAG, "\tField: " + field.getName() +
-            " Value: " + dp.getValue(field));
+                  " Value: " + dp.getValue(field));
           json.put(field.getName(), dp.getValue(field));
 
         }
@@ -527,16 +525,16 @@ public class GoogleFit extends CordovaPlugin {
     Log.w(TAG, "onConnected");
     // Connected to Google Fit Client.
     Fitness.SensorsApi.add(
-      googleApiClient,
-      new SensorRequest.Builder()
-        .setDataType(DataType.TYPE_STEP_COUNT_DELTA)
-        .build(),
-      new OnDataPointListener() {
-        @Override
-        public void onDataPoint(DataPoint dataPoint) {
+            googleApiClient,
+            new SensorRequest.Builder()
+                    .setDataType(DataType.TYPE_STEP_COUNT_DELTA)
+                    .build(),
+            new OnDataPointListener() {
+              @Override
+              public void onDataPoint(DataPoint dataPoint) {
 
-        }
-      });
+              }
+            });
   }
 
   public void onConnectionSuspended(int cause) {

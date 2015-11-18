@@ -37,32 +37,17 @@ public class GoogleFit extends CordovaPlugin {
 
   private GoogleApiClient googleApiClient;
 
-  public boolean execute(String action, JSONArray args,final CallbackContext callback)
-          throws JSONException
-  {
+  public boolean execute(String action, JSONArray args, final CallbackContext callback)
+          throws JSONException {
     Log.i(TAG, "Will execute ffff action \"" + action + "\" with arguments " + args);
 
 
-    if(action.equals("connect")){
-      connect(callback);
-      return true;
-    }
-    else if (action.equals("isConnected")){
-      isConnected(callback);
-    }
-    else if ((googleApiClient == null || !googleApiClient.isConnected())) {
-      Log.i(TAG, "not conencted");
-
-      callback.error("NOT_CONNECTED");
-      return true;
-    }
-
     switch (action) {
-      //
-      // GENERAL
-      //
       case "connect":
         connect(callback);
+        return true;
+      case "disconnect":
+        disconnect(callback);
         return true;
       case "isConnected":
         isConnected(callback);
@@ -88,10 +73,6 @@ public class GoogleFit extends CordovaPlugin {
       case "readGender":
         readGender(callback);
         return true;
-
-      //
-      // WEIGHT AND HEIGHT
-      //
       case "readWeight":
         readWeight(callback);
         return true;
@@ -106,13 +87,11 @@ public class GoogleFit extends CordovaPlugin {
         return true;
 
       case "getStepsLastWeek":
-
         cordova.getThreadPool().execute(new Runnable() {
           public void run() {
             getStepsLastWeek(callback);
           }
         });
-
         return true;
       default:
         Log.w(TAG, "Could not execute unknown action \"" + action + "\"!");
@@ -120,17 +99,10 @@ public class GoogleFit extends CordovaPlugin {
     }
   }
 
-  //
-  // GENERAL
-  //
-
 
   protected void isConnected(final CallbackContext callback) {
     Log.i(TAG, "isConnected");
 
-    if (googleApiClient != null && googleApiClient.isConnecting()) {
-      // TODO
-    }
 
     if (googleApiClient != null && googleApiClient.isConnected()) {
       Log.i(TAG, "Already connected successfully.");
@@ -150,7 +122,6 @@ public class GoogleFit extends CordovaPlugin {
     googleApiClient.registerConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
       @Override
       public void onConnected(Bundle bundle) {
-
         Log.i(TAG, "Connected successfully. Bundle: " + bundle);
         callback.success();
       }
@@ -158,8 +129,6 @@ public class GoogleFit extends CordovaPlugin {
       @Override
       public void onConnectionSuspended(int statusCode) {
         Log.i(TAG, "Connection suspended.");
-        googleApiClient.disconnect();
-
         callback.error(Connection.getStatusString(statusCode));
       }
     });
@@ -168,10 +137,7 @@ public class GoogleFit extends CordovaPlugin {
       @Override
       public void onConnectionFailed(ConnectionResult connectionResult) {
         Log.i(TAG, "Connection failed: " + connectionResult);
-        googleApiClient.disconnect();
-
         callback.error("not connected");
-
       }
     });
 
@@ -246,6 +212,21 @@ public class GoogleFit extends CordovaPlugin {
 
     Log.i(TAG, "Will connect...");
     googleApiClient.connect();
+  }
+
+
+  protected void disconnect(final CallbackContext callback) {
+    Log.i(TAG, "Disconnect ! ");
+
+    if (googleApiClient != null) {
+
+
+      googleApiClient.disconnect();
+      callback.success();
+
+    } else {
+      callback.success();
+    }
   }
 
   protected void disable(final CallbackContext callback) {

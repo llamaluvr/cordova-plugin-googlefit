@@ -91,6 +91,10 @@ GoogleFit.prototype.getStepsLastWeek = function(options, successCallback, failur
 	exec(successCallback, failureCallback, 'GoogleFit', 'getStepsLastWeek', [options]);
 };
 
+GoogleFit.prototype.saveWorkout = function(options, successCallback, failureCallback) {
+	exec(successCallback, failureCallback, 'GoogleFit', 'saveWorkout', [options]);
+};
+
 //
 // WORKAROUNDS
 //

@@ -394,64 +394,9 @@ public class GoogleFit extends CordovaPlugin {
   // WORKOUTS
   //
 
-  protected void saveWorkout(final JSONArray args, final CallbackContext callback) throws JSONException {
-    try {
-      JSONObject props = args.getJSONObject(0);
-
-      //get start and end time
-      /*String dateStr = props.getString("startTime");
-      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-      Date startTime = sdf.parse(dateStr);
-
-      dateStr = props.getString("endTime");
-      sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-      Date endTime = sdf.parse(dateStr);*/
-
-      // Create a session with metadata about the activity.
-      Session session = new Session.Builder()
-              .setName(props.getString("name"))
-              .setDescription(props.getString("description"))
-              .setIdentifier(props.getString("uniqueIdentifier"))
-              .setActivity(props.getString("activity"))
-              .setStartTime(props.getInt("startTime")/*startTime.getMillis()*/, TimeUnit.MILLISECONDS)
-              .setEndTime(props.getInt("endTime")/*endTime.getMillis()*/, TimeUnit.MILLISECONDS)
-              .build();
-
-      // Build a session insert request
-      SessionInsertRequest insertRequest = new SessionInsertRequest.Builder()
-              .setSession(session)
-              .build();
-
-      // Then, invoke the Sessions API to insert the session and await the result,
-      // which is possible here because of the AsyncTask. Always include a timeout when
-      // calling await() to avoid hanging that can occur from the service being shutdown
-      // because of low memory or other conditions.
-      Log.i(TAG, "Inserting the session in the History API");
-      com.google.android.gms.common.api.Status insertStatus =
-              Fitness.SessionsApi.insertSession(googleApiClient, insertRequest)
-                      .await(1, TimeUnit.MINUTES);
-
-      // Before querying the session, check to see if the insertion succeeded.
-      if (!insertStatus.isSuccess()) {
-          String errorMessage = "There was a problem inserting the session: " +
-                  insertStatus.getStatusMessage();
-
-          Log.i(TAG, errorMessage);
-          callback.error(errorMessage);
-
-          return;
-      }
-
-      // At this point, the session has been inserted and can be read.
-      Log.i(TAG, "Session insert was successful!");
-      callback.success();
-    } catch(JSONException e) {
-      StringWriter sw = new StringWriter();
-      e.printStackTrace(new PrintWriter(sw));
-      String exceptionDetails = sw.toString();
-      Log.i(TAG, exceptionDetails);
-      throw e;
-    }
+  protected void saveWorkout(final JSONArray args, final CallbackContext callback) {
+    WorkoutWriter workoutWriter = new WorkoutWriter(this.googleApiClient);
+    workoutWriter.saveSimpleWorkout(args, callback);
   }
 
   protected void getStepsLastWeek(final CallbackContext callback) {

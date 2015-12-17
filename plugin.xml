@@ -7,8 +7,8 @@
 	<description>Cordova plugin for Google Fit</description>
 
 	<keywords>cordova,googlefit,healthkit</keywords>
-	<repo>https://github.com/ilovept/cordova-plugin-googlefit.git</repo>
-	<issue>https://github.com/ilovept/cordova-plugin-googlefit/issues</issue>
+	<repo>https://github.com/dam1/cordova-plugin-googlefit</repo>
+	<issue>https://github.com/dam1/cordova-plugin-googlefit/issues</issue>
 
 	<js-module src="www/googlefit.js" name="googlefit">
 		<clobbers target="navigator.googlefit" />
@@ -22,10 +22,14 @@
 			</feature>
 		</config-file>
 
+		<framework src="com.android.support:support-v4:21.0.0" />
+		<framework src="com.google.android.gms:play-services-fitness:+" />
+
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/GoogleFit.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/Connection.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/WorkoutWriter.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/WorkoutWriterException.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
+		<source-file src="src/android/build-extras.gradle" target-dir="./" />
 	</platform>
 
 </plugin>

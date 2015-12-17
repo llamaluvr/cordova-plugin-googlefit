@@ -112,47 +112,24 @@ public class GoogleFit extends CordovaPlugin {
 
   protected void isConnected(final CallbackContext callback) {
     Log.i(TAG, "isConnected");
+    
+    try {
+      boolean result = (googleApiClient != null && googleApiClient.isConnected());
 
+      if(result) {
+        Log.i(TAG, "Already connected successfully.");
+      } else {
+        Log.i(TAG, "Not connected.");
+      }
 
-    if (googleApiClient != null && googleApiClient.isConnected()) {
-      Log.i(TAG, "Already connected successfully.");
-      callback.success();
-      return;
+      JSONObject json = new JSONObject();
+      json.put("result", result);
+
+      callback.success(json);
+    } catch (Exception e) {
+      callback.error("Error checking connection status.");
     }
-
-    if (googleApiClient == null) {
-      googleApiClient = new GoogleApiClient.Builder(getActivity())
-              .useDefaultAccount()
-              .addApi(Fitness.HISTORY_API)
-              .addScope(new Scope(Scopes.FITNESS_BODY_READ_WRITE))
-              .addScope(new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE))
-              .build();
-    }
-
-    googleApiClient.registerConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-      @Override
-      public void onConnected(Bundle bundle) {
-        Log.i(TAG, "Connected successfully. Bundle: " + bundle);
-        callback.success();
-      }
-
-      @Override
-      public void onConnectionSuspended(int statusCode) {
-        Log.i(TAG, "Connection suspended.");
-        callback.error(Connection.getStatusString(statusCode));
-      }
-    });
-
-    googleApiClient.registerConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-      @Override
-      public void onConnectionFailed(ConnectionResult connectionResult) {
-        Log.i(TAG, "Connection failed: " + connectionResult);
-        callback.error("not connected");
-      }
-    });
-
-    Log.i(TAG, "Will connect...");
-    googleApiClient.connect();
+    
   }
 
 

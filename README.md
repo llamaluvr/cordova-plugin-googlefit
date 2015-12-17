@@ -40,7 +40,7 @@ Error callback was called with an error string.
 		console.warn('Connection failed:', error);
 	});
 
-**Read weight:**
+**Read weight**
 
 TODO: Options could be used to get the weight for a specific date (from, to). Always just the latest result was returned.
 
@@ -54,7 +54,7 @@ Error callback was called with an error string.
 		console.warn('Read weight failed:', error);
 	});
 
-**Read height:**
+**Read height**
 
 TODO: Options could be used to get the height for a specific date (from, to). Always just the latest result was returned.
 
@@ -71,14 +71,14 @@ Error callback was called with an error string.
 
 See also [www/googlefit.js](https://github.com/ilovept/cordova-plugin-googlefit/blob/master/www/googlefit.js)
 
-**Save simple workout:**
+**Save simple workout**
 
 This saves a workout session to Google Fit that includes a name, description, unique id, activity type, and start time and end time. Does not save any activity segments. Pass an object that contains each of these values as shown below.
 
 The activity property matches the string value of the [FitnessActivities constants](https://developers.google.com/android/reference/com/google/android/gms/fitness/FitnessActivities). Click on a constant under the aforementioned link to see its string value, which does not always (ever?) match the name of the constant.
 
 	var workout = {
-        	name: 'some title',
+		name: 'some title',
                 description: 'some description',
                 uniqueIdentifier: 'some unique id',
                 activity: 'running',

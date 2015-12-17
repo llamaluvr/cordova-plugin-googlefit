@@ -16,6 +16,7 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.fitness.Fitness;
+import com.google.android.gms.fitness.FitnessActivities;
 import com.google.android.gms.fitness.data.Bucket;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
@@ -53,7 +54,9 @@ public class WorkoutWriter {
 		this.googleApiClient = apiClient;
 	}
 
-	//Saves a workout with an activity, start time, end time, name, description, and a single segment that encompasses the entire start/ end time.
+	//Saves a workout with an activity, start time, end time, name, description.
+	//originally thought that saving an activity segment is necessary, but it isn't.
+	//one problem with saving segments with the session is that when you overwrite the session with a shorter time, the time on the original segment remains
 	public void saveSimpleWorkout(final JSONArray args, final CallbackContext callback) {
 
 		JSONObject props;
@@ -61,8 +64,8 @@ public class WorkoutWriter {
 		String description;
 		String uniqueId;
 		String activity;
-		int startTimeInMilliseconds;
-		int endTimeInMilliseconds;
+		long startTimeInMilliseconds;
+		long endTimeInMilliseconds;
 
 		//get values
 		try {
@@ -71,8 +74,8 @@ public class WorkoutWriter {
 			description = props.getString("name");
 			uniqueId = props.getString("uniqueIdentifier");
 			activity = props.getString("activity");
-			startTimeInMilliseconds = props.getInt("startTime");
-			endTimeInMilliseconds = props.getInt("endTime");
+			startTimeInMilliseconds = props.getLong("startTime");
+			endTimeInMilliseconds = props.getLong("endTime");
 		} catch (JSONException e) {
 			String errorMessage = getExceptionMessage(e);
 			Log.i(TAG, errorMessage);
@@ -80,9 +83,11 @@ public class WorkoutWriter {
 			return;
 		}
 
-		DataSet activityDataSet = buildSingleSegmentActivityDataSet(name, activity, startTimeInMilliseconds, endTimeInMilliseconds);
+		//Log.i(TAG, "Start time: " + props.getString("startTime") + " end time: " + props.getString("endTime"));
+		Log.i(TAG, "Start time: " + startTimeInMilliseconds + " end time: " + endTimeInMilliseconds);
+		//DataSet activityDataSet = buildSingleSegmentActivityDataSet(name, activity, startTimeInMilliseconds, endTimeInMilliseconds);
 
-		SessionInsertRequest insertRequest = buildSessionInsertRequest(name, description, uniqueId, activity, startTimeInMilliseconds, endTimeInMilliseconds, activityDataSet);
+		SessionInsertRequest insertRequest = buildSessionInsertRequest(name, description, uniqueId, activity, startTimeInMilliseconds, endTimeInMilliseconds, null /*activityDataSet*/);
 
 		try {
 			insertAndVerifySession(insertRequest);
@@ -140,9 +145,9 @@ public class WorkoutWriter {
         // [END read_session]
 	}
 
-	private DataSet buildSingleSegmentActivityDataSet(String name, String activity, int startTimeInMilliseconds, int endTimeInMilliseconds) {
+	private DataSet buildSingleSegmentActivityDataSet(String name, String activity, long startTimeInMilliseconds, long endTimeInMilliseconds) {
 		DataSource activitySegmentDataSource = new DataSource.Builder()
-                //.setAppPackageName(Context.getApplicationContext())
+                //.setAppPackageName("com.liftiumapp")
                 .setDataType(DataType.TYPE_ACTIVITY_SEGMENT)
                 .setName(name + "-activity segments")
                 .setType(DataSource.TYPE_RAW)
@@ -150,14 +155,14 @@ public class WorkoutWriter {
         DataSet activitySegments = DataSet.create(activitySegmentDataSource);
 
         DataPoint activityDataPoint = activitySegments.createDataPoint()
-                .setTimeInterval(startTimeInMilliseconds, endTimeInMilliseconds, TimeUnit.MILLISECONDS);
+        							.setTimeInterval(startTimeInMilliseconds, endTimeInMilliseconds, TimeUnit.MILLISECONDS);
         activityDataPoint.getValue(Field.FIELD_ACTIVITY).setActivity(activity);
         activitySegments.add(activityDataPoint);
 
         return activitySegments;
 	}
 
-	private SessionInsertRequest buildSessionInsertRequest(String name, String description, String uniqueId, String activity, int startTimeInMilliseconds, int endTimeInMilliseconds, DataSet activityDataSet) {
+	private SessionInsertRequest buildSessionInsertRequest(String name, String description, String uniqueId, String activity, long startTimeInMilliseconds, long endTimeInMilliseconds, DataSet activityDataSet) {
 		// Create a session with metadata about the activity.
         Session session = new Session.Builder()
                 .setName(name)
@@ -171,7 +176,7 @@ public class WorkoutWriter {
         // Build a session insert request
         SessionInsertRequest insertRequest = new SessionInsertRequest.Builder()
                 .setSession(session)
-                .addDataSet(activityDataSet)
+                //.addDataSet(activityDataSet)
                 .build();
 
         return insertRequest;

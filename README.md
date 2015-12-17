@@ -1,6 +1,12 @@
 # Cordova plugin for [Google Fit](https://developers.google.com/fit/) (SDK)
 
+## Purpose of the Fork
 
+* Add functionality for saving workout sessions and weights (and maybe some other stuff) to the Google Fit plugin.
+
+## Status of the Fork
+
+* Added ability to save a simple workout (see below for API)
 
 ## Requirements
 

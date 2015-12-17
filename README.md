@@ -7,6 +7,12 @@
 ## Status of the Fork
 
 * Added ability to save a simple workout (see below for API)
+* Changed isConnected() to just return a true/ false result, don't try to connect if not connected.
+
+## To-do
+
+* Add save weight functionality
+* Add ability to save and read weight for any time period
 
 ## Requirements
 
@@ -38,6 +44,16 @@ Error callback was called with an error string.
 		console.info('Connected successfully!');
 	}, function() {
 		console.warn('Connection failed:', error);
+	});
+	
+**isConnected:**
+
+Check if the app is connected to Google Fit. Returns an object with a result property that is set to true or false.
+
+	navigator.googlefit.isConnected(function(result) {
+		console.info('Connection status: ' + result.result);
+	}, function() {
+		console.warn('Connection test failed: ', error);
 	});
 
 **Read weight**

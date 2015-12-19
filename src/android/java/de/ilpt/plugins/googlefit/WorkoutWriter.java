@@ -46,12 +46,13 @@ import java.io.PrintWriter;
 
 public class WorkoutWriter {
 
-	private static final String TAG = "GoogleFit";
-
 	private GoogleApiClient googleApiClient;
 
-	public WorkoutWriter(GoogleApiClient apiClient) {
+    private Loggable logger;
+
+	public WorkoutWriter(GoogleApiClient apiClient, Loggable logger) {
 		this.googleApiClient = apiClient;
+        this.logger = logger;
 	}
 
 	//Saves a workout with an activity, start time, end time, name, description.
@@ -77,14 +78,14 @@ public class WorkoutWriter {
 			startTimeInMilliseconds = props.getLong("startTime");
 			endTimeInMilliseconds = props.getLong("endTime");
 		} catch (JSONException e) {
-			String errorMessage = getExceptionMessage(e);
-			Log.i(TAG, errorMessage);
+			String errorMessage = ExceptionMessageProvider.getExceptionMessage(e);
+			this.logger.log(errorMessage);
 			callback.error(errorMessage);
 			return;
 		}
 
 		//Log.i(TAG, "Start time: " + props.getString("startTime") + " end time: " + props.getString("endTime"));
-		Log.i(TAG, "Start time: " + startTimeInMilliseconds + " end time: " + endTimeInMilliseconds);
+		this.logger.log("Start time: " + startTimeInMilliseconds + " end time: " + endTimeInMilliseconds);
 		//DataSet activityDataSet = buildSingleSegmentActivityDataSet(name, activity, startTimeInMilliseconds, endTimeInMilliseconds);
 
 		SessionInsertRequest insertRequest = buildSessionInsertRequest(name, description, uniqueId, activity, startTimeInMilliseconds, endTimeInMilliseconds, null /*activityDataSet*/);
@@ -93,15 +94,15 @@ public class WorkoutWriter {
 			insertAndVerifySession(insertRequest);
 			callback.success();
 		} catch (Exception e) {
-			String errorMessage = getExceptionMessage(e);
-			Log.i(TAG, errorMessage);
+			String errorMessage = ExceptionMessageProvider.getExceptionMessage(e);
+			this.logger.log(errorMessage);
          	callback.error(errorMessage);
 		}		
 	}
 
 	private void insertAndVerifySession(SessionInsertRequest insertRequest) throws WorkoutWriterException {
         // [START insert_session]
-        Log.i(TAG, "Inserting the session in the History API");
+        this.logger.log("Inserting the session in the History API");
         com.google.android.gms.common.api.Status insertStatus =
                 Fitness.SessionsApi.insertSession(this.googleApiClient, insertRequest)
                         .await(1, TimeUnit.MINUTES);
@@ -109,14 +110,14 @@ public class WorkoutWriter {
         // Before querying the session, check to see if the insertion succeeded.
         if (!insertStatus.isSuccess()) {
         	String errorStatusMessage = "There was a problem inserting the session: " + insertStatus.getStatusMessage();
-            Log.i(TAG, errorStatusMessage);
+            this.logger.log(errorStatusMessage);
             throw new WorkoutWriterException(errorStatusMessage);
         }
 
         // At this point, the session has been inserted and can be read.
         //TODO: maybe take this out. I guess it will throw an exception if it can't be read, but it doesn't really serve any other purpose.
         //This was from Google's example here: https://github.com/googlesamples/android-fit/blob/master/BasicHistorySessions/app/src/main/java/com/google/android/gms/fit/samples/basichistorysessions/MainActivity.java
-        Log.i(TAG, "Session insert was successful!");
+        this.logger.log("Session insert was successful!");
         // [END insert_session]
 
         // Begin by creating the query.
@@ -208,11 +209,4 @@ public class WorkoutWriter {
     } */
 
     //exception handling
-
-    private String getExceptionMessage(Exception e) {
-    	StringWriter sw = new StringWriter();
-		e.printStackTrace(new PrintWriter(sw));
-		String exceptionDetails = sw.toString();
-		return exceptionDetails;
-    }
 }

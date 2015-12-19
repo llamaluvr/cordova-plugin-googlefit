@@ -55,8 +55,12 @@ GoogleFit.prototype.readGender = function(successCallback, failureCallback) {
  * - requestWritePermission: Boolean
  * - unit: String -- 'kg', etc.
  */
-GoogleFit.prototype.readWeight = function(options, successCallback, failureCallback) {
-	exec(successCallback, failureCallback, 'GoogleFit', 'readWeight', [options]);
+GoogleFit.prototype.readMostRecentWeight = function(options, successCallback, failureCallback) {
+	exec(successCallback, failureCallback, 'GoogleFit', 'readMostRecentWeight', [options]);
+};
+
+GoogleFit.prototype.readMostRecentWeightAsOfDate = function(options, successCallback, failureCallback) {
+	exec(successCallback, failureCallback, 'GoogleFit', 'readMostRecentWeightAsOfDate', [options]);
 };
 
 GoogleFit.prototype.saveWeight = function(options, successCallback, failureCallback) {

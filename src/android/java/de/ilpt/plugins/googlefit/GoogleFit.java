@@ -40,6 +40,12 @@ public class GoogleFit extends CordovaPlugin {
 
   private GoogleApiClient googleApiClient;
 
+  private Loggable logger;
+
+  public GoogleFit() {
+    this.logger = new AndroidLogger(TAG);
+  }
+
   public boolean execute(String action, JSONArray args, final CallbackContext callback) throws JSONException {
 
     Log.i(TAG, "Will execute ffff action \"" + action + "\" with arguments " + args);
@@ -76,14 +82,17 @@ public class GoogleFit extends CordovaPlugin {
       case "readGender":
         readGender(callback);
         return true;
-      case "readWeight":
-        readWeight(callback);
+      case "readMostRecentWeight":
+        readMostRecentWeight(callback);
+        return true;
+      case "readMostRecentWeightAsOfDate":
+        readMostRecentWeightAsOfDate(args, callback);
         return true;
       case "saveWeight":
         saveWeight(callback);
         return true;
-      case "readHeight":
-        readHeight(callback);
+      case "readMostRecentHeight":
+        readMostRecentHeight(callback);
         return true;
       case "saveHeight":
         saveHeight(callback);
@@ -300,33 +309,21 @@ public class GoogleFit extends CordovaPlugin {
   // WEIGHT AND HEIGHT
   //
 
-  protected void readWeight(final CallbackContext callback) {
-    Calendar cal = Calendar.getInstance();
-    Date now = new Date();
-    cal.setTime(now);
-    long endTime = cal.getTimeInMillis();
-    long startTime = 1;
+  protected void readMostRecentWeight(final CallbackContext callback) {
+    WeightRepository weightRepository = new WeightRepository(this.googleApiClient, this.logger);
+    weightRepository.readMostRecentWeight(callback);
+  }
 
-    SimpleDateFormat dateFormat = new SimpleDateFormat();
-    Log.i(TAG, "Range Start: " + dateFormat.format(startTime));
-    Log.i(TAG, "Range End: " + dateFormat.format(endTime));
-
-
-    DataReadRequest request = new DataReadRequest.Builder()
-            .read(DataType.TYPE_WEIGHT)
-            .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
-            .setLimit(1)
-            .build();
-    PendingResult<DataReadResult> pendingResult = Fitness.HistoryApi.readData(googleApiClient, request);
-
-    handleLatestDataReadResult(pendingResult, DataType.TYPE_WEIGHT, Field.FIELD_WEIGHT, callback);
+  protected void readMostRecentWeightAsOfDate(final JSONArray args, final CallbackContext callback) {
+    WeightRepository weightRepository = new WeightRepository(this.googleApiClient, this.logger);
+    weightRepository.readMostRecentWeightAsOfDate(args, callback);
   }
 
   protected void saveWeight(final CallbackContext callback) {
 
   }
 
-  protected void readHeight(final CallbackContext callback) {
+  protected void readMostRecentHeight(final CallbackContext callback) {
     long startTime = 1;
     long endTime = System.currentTimeMillis();
 
@@ -350,7 +347,7 @@ public class GoogleFit extends CordovaPlugin {
   //
 
   protected void saveWorkout(final JSONArray args, final CallbackContext callback) {
-    WorkoutWriter workoutWriter = new WorkoutWriter(this.googleApiClient);
+    WorkoutWriter workoutWriter = new WorkoutWriter(this.googleApiClient, this.logger);
     workoutWriter.saveSimpleWorkout(args, callback);
   }
 

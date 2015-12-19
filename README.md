@@ -8,11 +8,13 @@
 
 * Added ability to save a simple workout (see below for API)
 * Changed isConnected() to just return a true/ false result, don't try to connect if not connected.
+* Changed readWeight() to readMostRecentWeight() and readMostRecentWeightAsOfDate().
 
 ## To-do
 
 * Add save weight functionality
 * Add ability to save and read weight for any time period
+* Have some way to tell if the app is connected to Google Fit (in the sense that it's registered to Google Fit, not if the connection is established for the app right now). I realize this was probably what the original isConnected is trying to do.
 
 ## Requirements
 
@@ -56,19 +58,34 @@ Check if the app is connected to Google Fit. Returns an object with a result pro
 		console.warn('Connection test failed: ', error);
 	});
 
-**Read weight**
+**Read most recent weight**
 
-TODO: Options could be used to get the weight for a specific date (from, to). Always just the latest result was returned.
+Reads the most recent weight stored in Google Fit.
 
-Success callback contains an weight object. DOES NOT MATCH HEALTHKIT API YET.
+Success callback contains an weight object. 
 
 Error callback was called with an error string.
 
-	navigator.googlefit.readWeight({}, function(weight) {
-		console.info(weight);
+	navigator.googlefit.readMostRecentWeight({}, function(weight) {
+		console.info('the weight in kg: ' + weight.value);
 	}, function(error) {
 		console.warn('Read weight failed:', error);
 	});
+	
+**Read most recent weight as of date**
+
+Reads the most recent weight stored in Google Fit as of a particular date. Useful for finding out what weight was recorded at the time of a particular workout.
+
+Success callback contains an weight object. 
+
+Error callback was called with an error string.
+
+	navigator.googlefit.readMostRecentWeightAsOfDate({date: someDateInMilliseconds}, function(weight) {
+		console.info('the weight in kg: ' + weight.value);
+	}, function(error) {
+		console.warn('Read weight failed:', error);
+	});
+
 
 **Read height**
 

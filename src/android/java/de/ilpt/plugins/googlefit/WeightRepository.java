@@ -93,6 +93,50 @@ public class WeightRepository {
 	    readMostRecentWeightInRange(startTime, endTime, callback); 
 	}
 
+	//save weight from json of format: {date: dateInMilliseconds, weight: weightInKg}
+	public void saveWeight(final JSONArray args, final CallbackContext callback) {
+
+		JSONObject props;
+		double weightInKg;
+		long dateInMilliseconds;
+
+		//get values
+		try {
+			props = args.getJSONObject(0);
+			weightInKg = props.getDouble("weight");
+			dateInMilliseconds = props.getLong("date");
+		} catch (JSONException e) {
+			String errorMessage = ExceptionMessageProvider.getExceptionMessage(e);
+			this.logger.log(errorMessage);
+			callback.error(errorMessage);
+			return;
+		}
+
+    DataSet weightDataSet = createDataForRequest(
+       DataType.TYPE_WEIGHT,    // for height, it would be DataType.TYPE_HEIGHT
+       DataSource.TYPE_RAW,
+       weightInKg,                  // weight in kgs
+       dateInMilliseconds,          // start time
+       dateInMilliseconds,          // end time
+       TimeUnit.MILLISECONDS  
+    );
+
+    com.google.android.gms.common.api.Status insertStatus =
+            Fitness.HistoryApi.insertData(this.googleApiClient, weightDataSet)
+                    .await(1, TimeUnit.MINUTES);
+
+    if (!insertStatus.isSuccess()) {
+    	String errorStatusMessage = "There was a problem inserting the weight: " + insertStatus.getStatusMessage();
+        this.logger.log(errorStatusMessage);
+        callback.error(errorStatusMessage);
+    }
+
+    // At this point, the session has been inserted and can be read.
+    //TODO: maybe take this out. I guess it will throw an exception if it can't be read, but it doesn't really serve any other purpose.
+    //This was from Google's example here: https://github.com/googlesamples/android-fit/blob/master/BasicHistorySessions/app/src/main/java/com/google/android/gms/fit/samples/basichistorysessions/MainActivity.java
+    this.logger.log("Weight insert was successful!");
+	}
+
 	private void readMostRecentWeightInRange(long startTimeInMilliseconds, long endTimeInMilliseconds, final CallbackContext callback) {
 		DataReadRequest request = new DataReadRequest.Builder()
 	            .read(DataType.TYPE_WEIGHT)
@@ -110,51 +154,82 @@ public class WeightRepository {
                                             final CallbackContext callback) {
 		final Loggable logger = this.logger;
 
-	    pendingResult.setResultCallback(new ResultCallback<DataReadResult>() {
-	      @Override
-	      public void onResult(DataReadResult dataReadResult) {
-	        if (dataReadResult.getStatus().isSuccess()) {
-	          logger.log("Read data was successfully!");
+    pendingResult.setResultCallback(new ResultCallback<DataReadResult>() {
+      @Override
+      public void onResult(DataReadResult dataReadResult) {
+        if (dataReadResult.getStatus().isSuccess()) {
+          logger.log("Read data was successfully!");
 
-	          List<DataSet> dataSets = dataReadResult.getDataSets();
-	          for (DataSet dataSet : dataSets) {
-	            logger.log("receive dataset: " + dataSet);
-	            logger.log("  data source: " + dataSet.getDataSource());
-	            logger.log("  data type: " + dataSet.getDataType() + " " + dataSet.getDataPoints());
-	            logger.log("  data points: " + dataSet.getDataPoints());
-	          }
+          List<DataSet> dataSets = dataReadResult.getDataSets();
+          for (DataSet dataSet : dataSets) {
+            logger.log("receive dataset: " + dataSet);
+            logger.log("  data source: " + dataSet.getDataSource());
+            logger.log("  data type: " + dataSet.getDataType() + " " + dataSet.getDataPoints());
+            logger.log("  data points: " + dataSet.getDataPoints());
+          }
 
-	          List<DataPoint> dataPoints = dataReadResult.getDataSet(dataType).getDataPoints();
+          List<DataPoint> dataPoints = dataReadResult.getDataSet(dataType).getDataPoints();
 
-	          if (dataPoints.isEmpty()) {
-	            callback.error("NO_DATA_POINT");
-	            return;
-	          }
+          if (dataPoints.isEmpty()) {
+            callback.error("NO_DATA_POINT");
+            return;
+          }
 
-	          DataPoint latestDataPoint = dataPoints.get(dataPoints.size() - 1);
+          DataPoint latestDataPoint = dataPoints.get(dataPoints.size() - 1);
 
-	          try {
-	            JSONObject json = new JSONObject();
+          try {
+            JSONObject json = new JSONObject();
 
-	            json.put("value", latestDataPoint.getValue(field));
-	            json.put("dataType", latestDataPoint.getDataType().getName());
-	            json.put("endTime", latestDataPoint.getEndTime(TimeUnit.MILLISECONDS));
-	            json.put("startTime", latestDataPoint.getStartTime(TimeUnit.MILLISECONDS));
-	            json.put("timestamp", latestDataPoint.getTimestamp(TimeUnit.MILLISECONDS));
-	            json.put("versionCode", latestDataPoint.getVersionCode());
+            json.put("value", latestDataPoint.getValue(field));
+            json.put("dataType", latestDataPoint.getDataType().getName());
+            json.put("endTime", latestDataPoint.getEndTime(TimeUnit.MILLISECONDS));
+            json.put("startTime", latestDataPoint.getStartTime(TimeUnit.MILLISECONDS));
+            json.put("timestamp", latestDataPoint.getTimestamp(TimeUnit.MILLISECONDS));
+            json.put("versionCode", latestDataPoint.getVersionCode());
 
-	            callback.success(json);
+            callback.success(json);
 
-	          } catch (JSONException e) {
-	            callback.error(e.toString());
-	          }
+          } catch (JSONException e) {
+            callback.error(e.toString());
+          }
 
-	        } else {
-	          logger.log("Read data failed: " + Connection.getStatusString(dataReadResult.getStatus().getStatusCode()));
-	          callback.error(Connection.getStatusString(dataReadResult.getStatus().getStatusCode()));
-	        }
-	      }
-	    });
+        } else {
+          logger.log("Read data failed: " + Connection.getStatusString(dataReadResult.getStatus().getStatusCode()));
+          callback.error(Connection.getStatusString(dataReadResult.getStatus().getStatusCode()));
+        }
+      }
+    });
   }
+
+  /**
+ * This method creates a dataset object to be able to insert data in google fit
+ * @param dataType DataType Fitness Data Type object
+ * @param dataSourceType int Data Source Id. For example, DataSource.TYPE_RAW
+ * @param values Object Values for the fitness data. They must be int or float
+ * @param startTime long Time when the fitness activity started
+ * @param endTime long Time when the fitness activity finished
+ * @param timeUnit TimeUnit Time unit in which period is expressed
+ * @return
+ */
+	private DataSet createDataForRequest(DataType dataType, int dataSourceType, Object values,
+	                                     long startTime, long endTime, TimeUnit timeUnit) {
+	    DataSource dataSource = new DataSource.Builder()
+	            .setDataType(dataType)
+	            .setType(dataSourceType)
+	            .build();
+
+	    DataSet dataSet = DataSet.create(dataSource);
+	    DataPoint dataPoint = dataSet.createDataPoint().setTimeInterval(startTime, endTime, timeUnit);
+
+	    if (values instanceof Integer) {
+	        dataPoint = dataPoint.setIntValues((Integer)values);
+	    } else {
+	        dataPoint = dataPoint.setFloatValues((Float)values);
+	    }
+
+	    dataSet.add(dataPoint);
+
+	    return dataSet;
+	}
 
 }

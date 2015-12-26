@@ -15,6 +15,10 @@ GoogleFit.prototype.connect = function(successCallback, failureCallback) {
 	exec(successCallback, failureCallback, 'GoogleFit', 'connect', []);
 };
 
+GoogleFit.prototype.connectWithAuthentication = function(successCallback, failureCallback) {
+	exec(successCallback, failureCallback, 'GoogleFit', 'connectWithAuthentication', []);
+};
+
 GoogleFit.prototype.isConnected = function(successCallback, failureCallback) {
 	exec(successCallback, failureCallback, 'GoogleFit', 'isConnected', []);
 };

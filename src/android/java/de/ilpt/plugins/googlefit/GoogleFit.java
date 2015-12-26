@@ -42,6 +42,8 @@ public class GoogleFit extends CordovaPlugin {
 
   private Loggable logger;
 
+  private GoogleFitApiClientConnector apiClientConnector;
+
   public GoogleFit() {
     this.logger = new AndroidLogger(TAG);
   }
@@ -50,10 +52,14 @@ public class GoogleFit extends CordovaPlugin {
 
     Log.i(TAG, "Will execute ffff action \"" + action + "\" with arguments " + args);
 
+    buildApiClientAndConnectorIfNeeded();
 
     switch (action) {
       case "connect":
         connect(callback);
+        return true;
+      case "connectWithAuthentication":
+        connectWithAuthentication(callback);
         return true;
       case "disconnect":
         disconnect(callback);
@@ -89,7 +95,7 @@ public class GoogleFit extends CordovaPlugin {
         readMostRecentWeightAsOfDate(args, callback);
         return true;
       case "saveWeight":
-        saveWeight(callback);
+        saveWeight(args, callback);
         return true;
       case "readMostRecentHeight":
         readMostRecentHeight(callback);
@@ -118,112 +124,48 @@ public class GoogleFit extends CordovaPlugin {
     }
   }
 
-
-  protected void isConnected(final CallbackContext callback) {
-    Log.i(TAG, "isConnected");
-    
-    try {
-      boolean result = (googleApiClient != null && googleApiClient.isConnected());
-
-      if(result) {
-        Log.i(TAG, "Already connected successfully.");
-      } else {
-        Log.i(TAG, "Not connected.");
-      }
-
-      JSONObject json = new JSONObject();
-      json.put("result", result);
-
-      callback.success(json);
-    } catch (Exception e) {
-      callback.error("Error checking connection status.");
+  //builds API client with permissions needed for all functionality
+  //TODO: let client of plugin specify what functionality will be used and only enable that
+  private void buildApiClientAndConnectorIfNeeded() {
+    if(this.googleApiClient == null) {
+      this.googleApiClient = new GoogleApiClient.Builder(getActivity())
+              .useDefaultAccount()
+              .addApi(Fitness.HISTORY_API)
+              .addApi(Fitness.SESSIONS_API)
+              .addScope(new Scope(Scopes.FITNESS_BODY_READ_WRITE))
+              .addScope(new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE))
+              .build();
     }
-    
+
+    if(this.apiClientConnector == null) {
+      //build the client connector only once so duplicate event listeners don't get added to the api client
+      this.apiClientConnector = new GoogleFitApiClientConnector(this.googleApiClient, this.logger, this);
+    }
   }
 
+  //just tests if a connection is already established.
+  //probably don't need this based on how connect is working now
+  protected void isConnected(final CallbackContext callback) {
+    this.apiClientConnector.isConnected(callback);
+  }
 
+  //if already connected, does nothing
+  //if not connected, will attempt to connect. Will not attempt to authenticate if the app is not even registered to google fit
+  //use this for connecting prior to interacting with Google Fit if app understands that it is already registered with Google Fit for the user.
   protected void connect(final CallbackContext callback) {
-    Log.i(TAG, "Connect ! ");
+    this.apiClientConnector.connect(callback);
+  }
 
-    if (googleApiClient != null && googleApiClient.isConnecting()) {
-      // TODO
-    }
-
-    if (googleApiClient != null && googleApiClient.isConnected()) {
-      Log.i(TAG, "Already connected successfully.");
-      callback.success();
-      return;
-    }
-
-    if (googleApiClient == null) {
-      googleApiClient = new GoogleApiClient.Builder(getActivity())
-        .useDefaultAccount()
-        .addApi(Fitness.HISTORY_API)
-        .addApi(Fitness.SESSIONS_API)
-        .addScope(new Scope(Scopes.FITNESS_BODY_READ_WRITE))
-        .addScope(new Scope(Scopes.FITNESS_ACTIVITY_READ_WRITE))
-        .build();
-    }
-
-    googleApiClient.registerConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-      @Override
-      public void onConnected(Bundle bundle) {
-        Log.i(TAG, "Connected successfully. Bundle: " + bundle);
-        callback.success();
-      }
-
-      @Override
-      public void onConnectionSuspended(int statusCode) {
-        Log.i(TAG, "Connection suspended.");
-        callback.error(Connection.getStatusString(statusCode));
-      }
-    });
-
-    googleApiClient.registerConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-      @Override
-      public void onConnectionFailed(ConnectionResult connectionResult) {
-        Log.i(TAG, "Connection failed: " + connectionResult);
-
-        if (connectionResult.hasResolution()) {
-          try {
-            Log.i(TAG, "Start oauth login...");
-
-            cordova.setActivityResultCallback(GoogleFit.this);
-            connectionResult.startResolutionForResult(getActivity(), REQUEST_OAUTH);
-
-          } catch (IntentSender.SendIntentException e) {
-            Log.i(TAG, "OAuth login failed", e);
-
-            callback.error(Connection.getStatusString(connectionResult.getErrorCode()));
-          }
-        } else {
-          // Show the localized error dialog
-          Log.i(TAG, "Show error dialog!");
-
-          GooglePlayServicesUtil.getErrorDialog(connectionResult.getErrorCode(), getActivity(), 0).show();
-
-          callback.error(Connection.getStatusString(connectionResult.getErrorCode()));
-        }
-      }
-    });
-
-    Log.i(TAG, "Will connect...");
-    googleApiClient.connect();
+  //if already connected, does nothing
+  //if not connected, will attempt to connect. Will attempt to authenticate if the app is not registered with Google Fit for the user.
+  //use this for connecting for the first time if connect() fails.
+  protected void connectWithAuthentication(final CallbackContext callback) {
+    this.apiClientConnector.connectWithAuthentication(callback);
   }
 
 
   protected void disconnect(final CallbackContext callback) {
-    Log.i(TAG, "Disconnect ! ");
-
-    if (googleApiClient != null) {
-
-
-      googleApiClient.disconnect();
-      callback.success();
-
-    } else {
-      callback.success();
-    }
+    this.apiClientConnector.disconnect(callback);
   }
 
   protected void disable(final CallbackContext callback) {
@@ -319,8 +261,9 @@ public class GoogleFit extends CordovaPlugin {
     weightRepository.readMostRecentWeightAsOfDate(args, callback);
   }
 
-  protected void saveWeight(final CallbackContext callback) {
-
+  protected void saveWeight(final JSONArray args, final CallbackContext callback) {
+    WeightRepository weightRepository = new WeightRepository(this.googleApiClient, this.logger);
+    weightRepository.saveWeight(args, callback);
   }
 
   protected void readMostRecentHeight(final CallbackContext callback) {

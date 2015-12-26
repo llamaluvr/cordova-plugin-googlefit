@@ -33,6 +33,7 @@
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/Loggable.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/AndroidLogger.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/ExceptionMessageProvider.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
+		<source-file src="src/android/java/de/ilpt/plugins/googlefit/GoogleFitApiClientConnector.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
 		<source-file src="src/android/build-extras.gradle" target-dir="./" />
 	</platform>
 

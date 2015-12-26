@@ -13,4 +13,8 @@ public class AndroidLogger implements Loggable {
 	public void log(String message) {
 		Log.i(this.tag, message);
 	}
+
+  public void log(String message, Exception e) {
+    Log.i(this.tag, message, e);
+  }
 }

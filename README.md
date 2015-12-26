@@ -8,13 +8,14 @@
 
 * Added ability to save a simple workout (see below for API)
 * Changed isConnected() to just return a true/ false result, don't try to connect if not connected.
+* Split connect() into connect() (for connecting when you've already signed into Google Fit) and connectWithAuthentication (to try to connect, but prompt for sign in with your Google Account if the app isn't already registered with Google Fit)
+* Refactored connection code so events aren't registered more than once if connection is attempted more than once.
 * Changed readWeight() to readMostRecentWeight() and readMostRecentWeightAsOfDate().
+* Added saveWeight() (not tested yet)
 
 ## To-do
 
-* Add save weight functionality
-* Add ability to save and read weight for any time period
-* Have some way to tell if the app is connected to Google Fit (in the sense that it's registered to Google Fit, not if the connection is established for the app right now). I realize this was probably what the original isConnected is trying to do.
+* test saving weight
 
 ## Requirements
 
@@ -36,16 +37,24 @@ For more information please read the [Google Fit Getting Started on Android](htt
 
 ## Status / API
 
-**Connect:**
+**connect:**
 
-Success callback was always called with 'OK'.
-
-Error callback was called with an error string.
+Attempt to connect to Google Fit, but don't try to authenticate if the app was never registered with Google Fit for the user in the first place. So, if your app is not listed in the Connected Apps section on the Google Fit app, this will fail.
 
 	navigator.googlefit.connect(function() {
 		console.info('Connected successfully!');
-	}, function() {
+	}, function(error) {
 		console.warn('Connection failed:', error);
+	});
+	
+**connectWithAuthentication:**
+
+Attempt to connect to Google Fit. If connection fails with the "sign in required" status, the prompt will appear to login to Google Fit. When the user confirms that they would like to use Google Fit with the app, the app will appear as a connected app in the Google Fit app. Future calls to connect can be made with connect() at this point.
+
+	navigator.googlefit.connectWithAuthentication(function() {
+		console.info('Connected successfully!');
+	}, function(error) {
+		console.warn('Connection test failed: ', error);
 	});
 	
 **isConnected:**
@@ -54,7 +63,7 @@ Check if the app is connected to Google Fit. Returns an object with a result pro
 
 	navigator.googlefit.isConnected(function(result) {
 		console.info('Connection status: ' + result.result);
-	}, function() {
+	}, function(error) {
 		console.warn('Connection test failed: ', error);
 	});
 
@@ -70,6 +79,16 @@ Error callback was called with an error string.
 		console.info('the weight in kg: ' + weight.value);
 	}, function(error) {
 		console.warn('Read weight failed:', error);
+	});
+	
+**Save weight**
+
+Saves a weight as of a given date.
+
+	navigator.googlefit.saveWeight({weight: weightInKg, date: dateInMilliseconds}, function() {
+		console.info('weight saved!');
+	}, function(error) {
+		console.warn('Save weight failed:', error);
 	});
 	
 **Read most recent weight as of date**

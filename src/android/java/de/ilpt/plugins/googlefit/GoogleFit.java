@@ -290,8 +290,8 @@ public class GoogleFit extends CordovaPlugin {
   //
 
   protected void saveWorkout(final JSONArray args, final CallbackContext callback) {
-    WorkoutWriter workoutWriter = new WorkoutWriter(this.googleApiClient, this.logger);
-    workoutWriter.saveSimpleWorkout(args, callback);
+    WorkoutRepository workoutRepository = new WorkoutRepository(this.googleApiClient, this.logger);
+    workoutRepository.saveSimpleWorkout(args, callback);
   }
 
   protected void getStepsLastWeek(final CallbackContext callback) {

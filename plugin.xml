@@ -27,7 +27,7 @@
 
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/GoogleFit.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/Connection.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
-		<source-file src="src/android/java/de/ilpt/plugins/googlefit/WorkoutWriter.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
+		<source-file src="src/android/java/de/ilpt/plugins/googlefit/WorkoutRepository.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/WorkoutWriterException.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/WeightRepository.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />
 		<source-file src="src/android/java/de/ilpt/plugins/googlefit/Loggable.java" target-dir="src/android/java/de/ilpt/plugins/googlefit" />

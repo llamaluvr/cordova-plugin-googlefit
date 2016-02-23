@@ -29,6 +29,8 @@ import com.google.android.gms.fitness.request.SensorRequest;
 import com.google.android.gms.fitness.result.DataReadResult;
 import com.google.android.gms.fitness.request.SessionInsertRequest;
 import com.google.android.gms.fitness.data.Session;
+import com.google.android.gms.fitness.request.SessionReadRequest;
+import com.google.android.gms.fitness.result.SessionReadResult;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -44,13 +46,13 @@ import java.util.concurrent.TimeUnit;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 
-public class WorkoutWriter {
+public class WorkoutRepository {
 
 	private GoogleApiClient googleApiClient;
 
     private Loggable logger;
 
-	public WorkoutWriter(GoogleApiClient apiClient, Loggable logger) {
+	public WorkoutRepository(GoogleApiClient apiClient, Loggable logger) {
 		this.googleApiClient = apiClient;
         this.logger = logger;
 	}
@@ -99,6 +101,79 @@ public class WorkoutWriter {
          	callback.error(errorMessage);
 		}		
 	}
+
+    public void readSimpleWorkoutById(final JSONArray args, final CallbackContext callback) throws JSONException {
+        JSONObject props;
+        String uniqueId;
+
+        //get unique id to look up
+        try {
+            props = args.getJSONObject(0);
+            uniqueId = props.getString("uniqueIdentifier");
+        } catch (JSONException e) {
+            String errorMessage = ExceptionMessageProvider.getExceptionMessage(e);
+            this.logger.log(errorMessage);
+            callback.error(errorMessage);
+            return;
+        }
+
+        // Begin by creating the query.
+        SessionReadRequest readRequest = new SessionReadRequest.Builder()
+         .setSessionId(uniqueId)
+         .build();
+
+        // [START read_session]
+        // Invoke the Sessions API to fetch the session with the query and wait for the result
+        // of the read request.
+        SessionReadResult sessionReadResult =
+                Fitness.SessionsApi.readSession(this.googleApiClient, readRequest)
+                        .await(1, TimeUnit.MINUTES);
+
+        JSONObject workoutJson = new JSONObject();
+
+        List<Session> sessions = sessionReadResult.getSessions();
+
+        if(sessions.size() == 0) {
+            workoutJson.put("isFound", false);
+            callback.success(workoutJson);
+        } else {
+            for (Session session : sessions) {
+
+                workoutJson.put("isFound", true);
+                workoutJson.put("name", session.getName());
+                workoutJson.put("description", session.getDescription());
+                workoutJson.put("startTime", session.getStartTime(TimeUnit.MILLISECONDS));
+                workoutJson.put("endTime", session.getEndTime(TimeUnit.MILLISECONDS));
+
+                JSONArray dataSetJsonArray = new JSONArray();
+
+                // Process the data sets for this session
+                List<DataSet> dataSets = sessionReadResult.getDataSet(session);
+                for (DataSet dataSet : dataSets) {
+
+                    JSONObject dataSetJson = new JSONObject();
+                    JSONArray dataPointJsonArray = new JSONArray();
+
+                    for(DataPoint dataPoint : dataSet.getDataPoints()) {
+
+                        JSONObject dataPointJson = new JSONObject();
+                        dataPointJson.put("activity", dataPoint.getValue(Field.FIELD_ACTIVITY).asActivity());
+                        dataPointJson.put("startTime", dataPoint.getStartTime(TimeUnit.MILLISECONDS));
+                        dataPointJson.put("endTime", dataPoint.getEndTime(TimeUnit.MILLISECONDS));
+                        dataPointJsonArray.put(dataPointJson);
+                    }
+
+                    dataSetJson.put("dataPoints", dataPointJsonArray);
+                }
+
+                workoutJson.put("dataSets", dataSetJsonArray);
+            }
+
+            callback.success(workoutJson);
+        }
+
+        // [END read_session]
+    } 
 
 	private void insertAndVerifySession(SessionInsertRequest insertRequest) throws WorkoutWriterException {
         // [START insert_session]

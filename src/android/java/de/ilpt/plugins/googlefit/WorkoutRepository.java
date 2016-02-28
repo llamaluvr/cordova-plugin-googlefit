@@ -24,6 +24,7 @@ import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.request.DataReadRequest;
+import com.google.android.gms.fitness.request.DataDeleteRequest;
 import com.google.android.gms.fitness.request.OnDataPointListener;
 import com.google.android.gms.fitness.request.SensorRequest;
 import com.google.android.gms.fitness.result.DataReadResult;
@@ -31,6 +32,7 @@ import com.google.android.gms.fitness.request.SessionInsertRequest;
 import com.google.android.gms.fitness.data.Session;
 import com.google.android.gms.fitness.request.SessionReadRequest;
 import com.google.android.gms.fitness.result.SessionReadResult;
+import com.google.android.gms.fitness.HistoryApi;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -101,6 +103,55 @@ public class WorkoutRepository {
          	callback.error(errorMessage);
 		}		
 	}
+
+    public void deleteSession(final JSONArray args, final CallbackContext callback) throws JSONException {
+        JSONObject props;
+        String uniqueId;
+
+        //get unique id to look up
+        try {
+            props = args.getJSONObject(0);
+            uniqueId = props.getString("uniqueIdentifier");
+        } catch (JSONException e) {
+            String errorMessage = ExceptionMessageProvider.getExceptionMessage(e);
+            this.logger.log(errorMessage);
+            callback.error(errorMessage);
+            return;
+        }
+
+        // Begin by creating the query.
+        SessionReadRequest readRequest = new SessionReadRequest.Builder()
+         .setSessionId(uniqueId)
+         .build();
+
+        // [START read_session]
+        // Invoke the Sessions API to fetch the session with the query and wait for the result
+        // of the read request.
+        SessionReadResult sessionReadResult =
+                Fitness.SessionsApi.readSession(this.googleApiClient, readRequest)
+                        .await(1, TimeUnit.MINUTES);
+
+        List<Session> sessions = sessionReadResult.getSessions();
+
+        for (Session session : sessions) {
+            DataDeleteRequest deleteRequest = new DataDeleteRequest.Builder()
+              .addSession(session)
+              .build();
+
+            com.google.android.gms.common.api.Status deleteStatus =
+                Fitness.HistoryApi.deleteData(this.googleApiClient, deleteRequest)
+                        .await(1, TimeUnit.MINUTES);
+
+            // Before querying the session, check to see if the insertion succeeded.
+            if (!deleteStatus.isSuccess()) {
+                String errorStatusMessage = "There was a problem deleting the session: " + deleteStatus.getStatusMessage();
+                this.logger.log(errorStatusMessage);
+                callback.error(errorStatusMessage);
+            }
+        }
+
+        callback.success();
+    }
 
     public void readSimpleWorkoutById(final JSONArray args, final CallbackContext callback) throws JSONException {
         JSONObject props;
@@ -221,7 +272,7 @@ public class WorkoutRepository {
         // [END read_session]
 	}
 
-	private DataSet buildSingleSegmentActivityDataSet(String name, String activity, long startTimeInMilliseconds, long endTimeInMilliseconds) {
+	/*private DataSet buildSingleSegmentActivityDataSet(String name, String activity, long startTimeInMilliseconds, long endTimeInMilliseconds) {
 		DataSource activitySegmentDataSource = new DataSource.Builder()
                 //.setAppPackageName("com.liftiumapp")
                 .setDataType(DataType.TYPE_ACTIVITY_SEGMENT)
@@ -236,7 +287,7 @@ public class WorkoutRepository {
         activitySegments.add(activityDataPoint);
 
         return activitySegments;
-	}
+	}*/
 
 	private SessionInsertRequest buildSessionInsertRequest(String name, String description, String uniqueId, String activity, long startTimeInMilliseconds, long endTimeInMilliseconds, DataSet activityDataSet) {
 		// Create a session with metadata about the activity.

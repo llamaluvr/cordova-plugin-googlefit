@@ -17,6 +17,8 @@
 ## To-do
 
 * test saving weight
+* read a workout
+* save a workout with some activity info inside of it
 
 ## Requirements
 

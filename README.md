@@ -12,6 +12,7 @@
 * Refactored connection code so events aren't registered more than once if connection is attempted more than once.
 * Changed readWeight() to readMostRecentWeight() and readMostRecentWeightAsOfDate().
 * Added saveWeight() (not tested yet)
+* Added deleteWorkout()
 
 ## To-do
 
@@ -144,6 +145,26 @@ The activity property matches the string value of the [FitnessActivities constan
 	});
 
 Calling saveWorkout() again with the same unique identifier will overwrite the workout. There's a bunch of cruft in the code right now related to saving an activity segment. I took it out for now because a) it seems pretty pointless for a single segment, and b) whenever I tried to overwrite a session with a shorter time interval than the previous version, it left a separate "session" in Google Fit for the remaining time. It's like all the sessions need to be cleared out first.
+
+**Delete workout**
+
+Given a unique identifier, start time, and end time, if any workouts are found matching all of the criteria, then the workout is deleted.
+
+Isn't a unique identifier enough to delete one workout? You'd think, but the Google Fit API wants a time interval on the query to read and the request to delete the workout. So there ya go. Think of the startTime and endTime as a range in which Google Fit should look for the uniquely-identified workout.
+
+deleteWorkout() will only fail if there's some error. A request that does not match any workouts will have no effect, and will not return an error. Sorry about that. I'll probably change that.
+
+
+	var workout = {
+                uniqueIdentifier: 'some unique id',
+                startTime: startTimeInMilliseconds,
+                endTime: endTimeInMilliseconds
+        };
+	navigator.googlefit.deleteWorkout(workout, function() {
+		console.log('Workout deleted from Google Fit');
+	}, function(error) {
+		console.warn('Delete workout failed:', error);
+	});
 
 ## Application client ID and certificate
 

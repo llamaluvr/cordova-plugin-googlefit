@@ -104,14 +104,18 @@ public class WorkoutRepository {
 		}		
 	}
 
-    public void deleteSession(final JSONArray args, final CallbackContext callback) throws JSONException {
+    public void deleteSession(final JSONArray args, final CallbackContext callback) {
         JSONObject props;
         String uniqueId;
+        long startTimeInMilliseconds;
+        long endTimeInMilliseconds;
 
         //get unique id to look up
         try {
             props = args.getJSONObject(0);
             uniqueId = props.getString("uniqueIdentifier");
+            startTimeInMilliseconds = props.getLong("startTime");
+            endTimeInMilliseconds = props.getLong("endTime");
         } catch (JSONException e) {
             String errorMessage = ExceptionMessageProvider.getExceptionMessage(e);
             this.logger.log(errorMessage);
@@ -119,38 +123,47 @@ public class WorkoutRepository {
             return;
         }
 
-        // Begin by creating the query.
-        SessionReadRequest readRequest = new SessionReadRequest.Builder()
-         .setSessionId(uniqueId)
-         .build();
+        try {
 
-        // [START read_session]
-        // Invoke the Sessions API to fetch the session with the query and wait for the result
-        // of the read request.
-        SessionReadResult sessionReadResult =
-                Fitness.SessionsApi.readSession(this.googleApiClient, readRequest)
-                        .await(1, TimeUnit.MINUTES);
+            // Begin by creating the query.
+            SessionReadRequest readRequest = new SessionReadRequest.Builder()
+             .setSessionId(uniqueId)
+             .setTimeInterval(startTimeInMilliseconds, endTimeInMilliseconds, TimeUnit.MILLISECONDS)
+             .build();
 
-        List<Session> sessions = sessionReadResult.getSessions();
+            // [START read_session]
+            // Invoke the Sessions API to fetch the session with the query and wait for the result
+            // of the read request.
+            SessionReadResult sessionReadResult =
+                    Fitness.SessionsApi.readSession(this.googleApiClient, readRequest)
+                            .await(1, TimeUnit.MINUTES);
 
-        for (Session session : sessions) {
-            DataDeleteRequest deleteRequest = new DataDeleteRequest.Builder()
-              .addSession(session)
-              .build();
+            List<Session> sessions = sessionReadResult.getSessions();
 
-            com.google.android.gms.common.api.Status deleteStatus =
-                Fitness.HistoryApi.deleteData(this.googleApiClient, deleteRequest)
-                        .await(1, TimeUnit.MINUTES);
+            for (Session session : sessions) {
+                DataDeleteRequest deleteRequest = new DataDeleteRequest.Builder()
+                  .addSession(session)
+                  .setTimeInterval(startTimeInMilliseconds, endTimeInMilliseconds, TimeUnit.MILLISECONDS)
+                  .build();
 
-            // Before querying the session, check to see if the insertion succeeded.
-            if (!deleteStatus.isSuccess()) {
-                String errorStatusMessage = "There was a problem deleting the session: " + deleteStatus.getStatusMessage();
-                this.logger.log(errorStatusMessage);
-                callback.error(errorStatusMessage);
+                com.google.android.gms.common.api.Status deleteStatus =
+                    Fitness.HistoryApi.deleteData(this.googleApiClient, deleteRequest)
+                            .await(1, TimeUnit.MINUTES);
+
+                // Before querying the session, check to see if the insertion succeeded.
+                if (!deleteStatus.isSuccess()) {
+                    String errorStatusMessage = "There was a problem deleting the session: " + deleteStatus.getStatusMessage();
+                    this.logger.log(errorStatusMessage);
+                    callback.error(errorStatusMessage);
+                }
             }
-        }
 
-        callback.success();
+            callback.success();
+        } catch (Exception e) {
+            String errorMessage = ExceptionMessageProvider.getExceptionMessage(e);
+            this.logger.log(errorMessage);
+            callback.error(errorMessage);
+        }
     }
 
     public void readSimpleWorkoutById(final JSONArray args, final CallbackContext callback) throws JSONException {

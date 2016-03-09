@@ -111,6 +111,10 @@ public class GoogleFit extends CordovaPlugin {
         saveWorkout(args, callback);
         return true;
 
+      case "deleteWorkout":
+        deleteWorkout(args, callback);
+        return true;
+
       case "getStepsLastWeek":
         cordova.getThreadPool().execute(new Runnable() {
           public void run() {
@@ -292,6 +296,11 @@ public class GoogleFit extends CordovaPlugin {
   protected void saveWorkout(final JSONArray args, final CallbackContext callback) {
     WorkoutRepository workoutRepository = new WorkoutRepository(this.googleApiClient, this.logger);
     workoutRepository.saveSimpleWorkout(args, callback);
+  }
+
+  protected void deleteWorkout(final JSONArray args, final CallbackContext callback) {
+    WorkoutRepository workoutRepository = new WorkoutRepository(this.googleApiClient, this.logger);
+    workoutRepository.deleteSession(args, callback);
   }
 
   protected void getStepsLastWeek(final CallbackContext callback) {

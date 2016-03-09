@@ -103,6 +103,10 @@ GoogleFit.prototype.saveWorkout = function(options, successCallback, failureCall
 	exec(successCallback, failureCallback, 'GoogleFit', 'saveWorkout', [options]);
 };
 
+GoogleFit.prototype.deleteWorkout = function(options, successCallback, failureCallback) {
+	exec(successCallback, failureCallback, 'GoogleFit', 'deleteWorkout', [options]);
+};
+
 //
 // WORKAROUNDS
 //

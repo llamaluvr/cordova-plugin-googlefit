@@ -34,7 +34,7 @@ For more information please read the [Google Fit Getting Started on Android](htt
 
 ## Install plugin
 
-	cordova plugin add https://github.com/dam1/cordova-plugin-googlefit.git
+	cordova plugin add https://github.com/llamaluvr/cordova-plugin-googlefit.git
 
 
 
